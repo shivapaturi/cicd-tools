@@ -3,34 +3,20 @@
 #resize disk from 20GB to 50GB
 growpart /dev/nvme0n1 4
 
+#  Extend logical volumes
 lvextend -L +10G /dev/RootVG/homeVol
-lvextend -L +10G /dev/mapper/RootVG-varVol
-lvextend -l +100%FREE /dev/mapper/RootVG-varTmpVol
+lvextend -L +10G /dev/RootVG/varVol
+lvextend -l +100%FREE /dev/RootVG/varTmpVol
 
-xfs_growfs /
-xfs_growfs /var/tmp
+#  Grow XFS filesystems
+xfs_growfs /home
 xfs_growfs /var
+xfs_growfs /var/tmp
 
-
-#!/bin/bash
-
-dnf install -y fontconfig java-21-openjdk curl
-
-# Add Jenkins stable repository
-curl -fsSL https://pkg.jenkins.io/rpm-stable/jenkins.repo \
-  -o /etc/yum.repos.d/jenkins.repo
-
-# Import Jenkins signing key
-rpm --import https://pkg.jenkins.io/rpm-stable/jenkins.io-2026.key
-
-# Install Jenkins
-dnf clean all
-dnf makecache
-dnf install -y jenkins
-
-# Start Jenkins
+curl -o /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo
+rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io-2023.key
+yum install fontconfig java-21-openjdk -y
+yum install jenkins -y
 systemctl daemon-reload
-systemctl enable --now jenkins
-
-# Verify
-systemctl status jenkins --no-pager
+systemctl enable jenkins
+systemctl start jenkins
